@@ -16,14 +16,13 @@ export async function main(ns) {
         var currSevSecLv = ns.getServerSecurityLevel(target);
         var currSerMoney = ns.getServerMoneyAvailable(target);
 
-        var moneyThresh = moneyMax * 0.7;   //change thresholds to whatever values you prefer
-        var securityThresh = minSecurity + 3;
-        let numThreads = 1;
-        var numTimesToHack = 0.05;
-        let hackWhenOverLimit = 5000000; // 5 mil
+        var securityThresh = minSecurity + 6; // keep target security level between min and min+4
+        let numThreads = 1; // at least a single thread action
+        var numTimesToHack = 0.03; // a little bit of time buffer for async
+        let hackStartsAt = Math.min(moneyMax * 0.7, 5000000); // start to hack when over 5mil or reach 70% of server max money
 
         ns.tprint('[STARTED] @ ' + optimalServer);
-        ns.tprint('[hackOver] ' + hackWhenOverLimit);
+        ns.tprint('[hackOver] ' + hackStartsAt);
         ns.tprint('[money] ' + currSerMoney + ' / ' + moneyMax);
         ns.tprint('[security] ' + currSevSecLv + ' vs min ' + minSecurity);
 
@@ -32,7 +31,7 @@ export async function main(ns) {
         //Higher number means longer time without updating list of all servers and optimal server, but also less time lost in buffer time in between cycles.
         //I would recommend having it at 1 at the start of the run and gradually increasing it as the rate at which you get more servers you can use decreases.
         //Don't increase it too far tho, as weaken/hack/grow times also tend to increase throughout a run.
-        numTimesToHack += 1;
+        numTimesToHack += 2;
 
         //weakens/grows/hacks the optimal server from all rootable servers except home
         if (currSevSecLv > securityThresh) {
@@ -46,8 +45,8 @@ export async function main(ns) {
                     ns.exec("w1.ns", rootableServers[i], numThreads, target);
                 }
             }
-            await ns.sleep(numTimesToHack * ns.getWeakenTime(target) + 300);
-        } else if (currSerMoney < moneyThresh && currSerMoney < hackWhenOverLimit) {
+            await ns.sleep(numTimesToHack * ns.getWeakenTime(target) + 500);
+        } else if (currSerMoney < hackStartsAt) {
             ns.tprint("growing " + target)
             for (let i = 0; i < rootableServers.length; i++) {
                 ns.killall(rootableServers[i]);
@@ -57,7 +56,7 @@ export async function main(ns) {
                     ns.exec("g1.ns", rootableServers[i], numThreads, target);
                 }
             }
-            await ns.sleep(numTimesToHack * ns.getGrowTime(target) + 300);
+            await ns.sleep(numTimesToHack * ns.getGrowTime(target) + 500);
         } else {
             ns.tprint("hacking " + target)
             for (let i = 0; i < rootableServers.length; i++) {
@@ -68,7 +67,7 @@ export async function main(ns) {
                     ns.exec("h1.ns", rootableServers[i], numThreads, target);
                 }
             }
-            await ns.sleep(numTimesToHack * ns.getHackTime(target) + 300);
+            await ns.sleep(numTimesToHack * ns.getHackTime(target) + 500);
         }
     }
 
