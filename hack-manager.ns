@@ -1,3 +1,13 @@
+/** Script to execute an hack() call after a specified cooldown */
+const hackScript = { "filename": "h1.ns", "ram": 1.7};
+/** Script to execute a grow() call after a specified cooldown */
+const growScript = { "filename": "g1.ns", "ram": 1.75};
+/** Script to execute a weaken() call after a specified cooldown */
+const weakenScript = { "filename": "w1.ns", "ram": 1.75};
+
+/** A constant value to add/subtract to sleep() calls to ensure correct synchronization */
+const sleepConstant = 500;
+
 /**
  * Finds the optimal server to hack and hacks it from all possible servers except home.
  * Only run from home server
@@ -16,10 +26,10 @@ export async function main(ns) {
         var currSevSecLv = ns.getServerSecurityLevel(target);
         var currSerMoney = ns.getServerMoneyAvailable(target);
 
-        var securityThresh = minSecurity + 6; // keep target security level between min and min+4
+        var securityThresh = minSecurity + 7; // keep target security level between min and min+4
         let numThreads = 1; // at least a single thread action
         var numTimesToHack = 0.03; // a little bit of time buffer for async
-        let hackStartsAt = Math.min(moneyMax * 0.7, 5000000); // start to hack when over 5mil or reach 70% of server max money
+        let hackStartsAt = Math.min(moneyMax * 0.6, 5000000); // start to hack when over 5mil or reach 70% of server max money
 
         ns.tprint('[STARTED] @ ' + optimalServer);
         ns.tprint('[hackOver] ' + hackStartsAt);
@@ -31,7 +41,7 @@ export async function main(ns) {
         //Higher number means longer time without updating list of all servers and optimal server, but also less time lost in buffer time in between cycles.
         //I would recommend having it at 1 at the start of the run and gradually increasing it as the rate at which you get more servers you can use decreases.
         //Don't increase it too far tho, as weaken/hack/grow times also tend to increase throughout a run.
-        numTimesToHack += 2;
+        numTimesToHack += 1;
 
         //weakens/grows/hacks the optimal server from all rootable servers except home
         if (currSevSecLv > securityThresh) {
@@ -39,35 +49,35 @@ export async function main(ns) {
             for (let i = 0; i < rootableServers.length; i++) {
                 ns.killall(rootableServers[i]);
                 numThreads = (ns.getServerMaxRam(rootableServers[i]) - ns.getServerUsedRam(rootableServers[i])) //free ram
-                numThreads /= ns.getScriptRam("w1.ns", "home");
+                numThreads /= weakenScript.ram;
                 numThreads = Math.floor(numThreads);
                 if (numThreads > 0) {
-                    ns.exec("w1.ns", rootableServers[i], numThreads, target);
+                    ns.exec(weakenScript.filename, rootableServers[i], numThreads, target);
                 }
             }
-            await ns.sleep(numTimesToHack * ns.getWeakenTime(target) + 500);
+            await ns.sleep(numTimesToHack * ns.getWeakenTime(target) + sleepConstant);
         } else if (currSerMoney < hackStartsAt) {
             ns.tprint("growing " + target)
             for (let i = 0; i < rootableServers.length; i++) {
                 ns.killall(rootableServers[i]);
                 numThreads = (ns.getServerMaxRam(rootableServers[i]) - ns.getServerUsedRam(rootableServers[i]))
-                numThreads /= ns.getScriptRam("g1.ns", "home");
+                numThreads /= growScript.ram;
                 if (numThreads > 0) {
-                    ns.exec("g1.ns", rootableServers[i], numThreads, target);
+                    ns.exec(growScript.filename, rootableServers[i], numThreads, target);
                 }
             }
-            await ns.sleep(numTimesToHack * ns.getGrowTime(target) + 500);
+            await ns.sleep(numTimesToHack * ns.getGrowTime(target) + sleepConstant);
         } else {
             ns.tprint("hacking " + target)
             for (let i = 0; i < rootableServers.length; i++) {
                 ns.killall(rootableServers[i]);
                 numThreads = (ns.getServerMaxRam(rootableServers[i]) - ns.getServerUsedRam(rootableServers[i]))
-                numThreads /= ns.getScriptRam("h1.ns", "home");
+                numThreads /= hackScript.ram;
                 if (numThreads > 0) {
-                    ns.exec("h1.ns", rootableServers[i], numThreads, target);
+                    ns.exec(hackScript.filename, rootableServers[i], numThreads, target);
                 }
             }
-            await ns.sleep(numTimesToHack * ns.getHackTime(target) + 500);
+            await ns.sleep(numTimesToHack * ns.getHackTime(target) + sleepConstant);
         }
     }
 
@@ -77,7 +87,7 @@ export async function main(ns) {
 * Copies files in file list to all servers and returns an array of all servers
 */
 async function findAllServers(ns) {
-    const fileList = ["h1.ns", "w1.ns", "g1.ns"];   //These files just infinitely hack, weaken, and grow respectively.
+    const fileList = [hackScript.filename,growScript.filename,weakenScript.filename];   //These files just infinitely hack, weaken, and grow respectively.
     var q = [];
     var serverDiscovered = [];
 
