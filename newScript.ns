@@ -15,9 +15,9 @@ const hackSecurityEffect = 0.002;
 /** Script to execute an hack() call after a specified cooldown */
 const hackScript = { "filename": "h1.ns", "ram": 1.7, "ratio": 0.2 };
 /** Script to execute a grow() call after a specified cooldown */
-const growScript = { "filename": "g1.ns", "ram": 1.75, "ratio": 0.8 };
+const growScript = { "filename": "g1.ns", "ram": 1.75, "ratio": 0.85 };
 /** Script to execute a weaken() call after a specified cooldown */
-const weakenScript = { "filename": "w1.ns", "ram": 1.75, "ratio": 0.8 };
+const weakenScript = { "filename": "w1.ns", "ram": 1.75, "ratio": 0.9 };
 
 /**
  * Gets the amount of free ram for the server.
