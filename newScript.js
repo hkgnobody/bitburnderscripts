@@ -3,7 +3,7 @@ const sleepConstant = 200;
 /** The percentage of money to steal from the target at every cycle */
 const moneyToStealPercentage = 0.5;
 /** Buffer of security level */
-const securityBufferLvl = 5;
+const securityBufferLvl = 7;
 
 /** How much the security level of a server gets decreased by a weaken() call */
 const weakenSecurityEffect = 0.05;
@@ -13,11 +13,11 @@ const growSecurityEffect = 0.004;
 const hackSecurityEffect = 0.002;
 
 /** Script to execute an hack() call after a specified cooldown */
-const hackScript = { "filename": "h1.ns", "ram": 1.7, "ratio": 0.2 };
+const hackScript = { "filename": "h1.js", "ram": 1.7, "ratio": 0.2 };
 /** Script to execute a grow() call after a specified cooldown */
-const growScript = { "filename": "g1.ns", "ram": 1.75, "ratio": 0.85 };
+const growScript = { "filename": "g1.js", "ram": 1.75, "ratio": 0.4 };
 /** Script to execute a weaken() call after a specified cooldown */
-const weakenScript = { "filename": "w1.ns", "ram": 1.75, "ratio": 0.9 };
+const weakenScript = { "filename": "w1.js", "ram": 1.75, "ratio": 0.7 };
 
 /**
  * Gets the amount of free ram for the server.
