@@ -1,9 +1,9 @@
 /** Script to execute an hack() call after a specified cooldown */
-const hackScript = { "filename": "h1.ns", "ram": 1.7};
+const hackScript = { "filename": "h1.js", "ram": 1.7 };
 /** Script to execute a grow() call after a specified cooldown */
-const growScript = { "filename": "g1.ns", "ram": 1.75};
+const growScript = { "filename": "g1.js", "ram": 1.75 };
 /** Script to execute a weaken() call after a specified cooldown */
-const weakenScript = { "filename": "w1.ns", "ram": 1.75};
+const weakenScript = { "filename": "w1.js", "ram": 1.75 };
 
 /** A constant value to add/subtract to sleep() calls to ensure correct synchronization */
 const sleepConstant = 500;
@@ -31,10 +31,11 @@ export async function main(ns) {
         var numTimesToHack = 0.03; // a little bit of time buffer for async
         let hackStartsAt = Math.min(moneyMax * 0.6, 5000000); // start to hack when over 5mil or reach 70% of server max money
 
-        ns.tprint('[STARTED] @ ' + optimalServer);
-        ns.tprint('[hackOver] ' + hackStartsAt);
-        ns.tprint('[money] ' + currSerMoney + ' / ' + moneyMax);
-        ns.tprint('[security] ' + currSevSecLv + ' vs min ' + minSecurity);
+        // uncomment for activity logs
+        //ns.tprint('[STARTED] @ ' + optimalServer);
+        //ns.tprint('[hackOver] ' + hackStartsAt);
+        //ns.tprint('[money] ' + currSerMoney + ' / ' + moneyMax);
+        //ns.tprint('[security] ' + currSevSecLv + ' vs min ' + minSecurity);
 
         //Number of times the code weakens/grows/hacks in a row once it decides on which one to do.
         //Change to the value you prefer.
@@ -87,7 +88,7 @@ export async function main(ns) {
 * Copies files in file list to all servers and returns an array of all servers
 */
 async function findAllServers(ns) {
-    const fileList = [hackScript.filename,growScript.filename,weakenScript.filename];   //These files just infinitely hack, weaken, and grow respectively.
+    const fileList = [hackScript.filename, growScript.filename, weakenScript.filename];   //These files just infinitely hack, weaken, and grow respectively.
     var q = [];
     var serverDiscovered = [];
 
