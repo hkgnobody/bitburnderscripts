@@ -1,6 +1,6 @@
 # bitburnderscripts
 
-Get all 6 files
+Get all files.
 
 ``` run hack-manager.js ``` This run at home and use all connected device resources to perform action on target (auto find best target)
 
