@@ -1,5 +1,9 @@
+// Credits: u/leo099
+// OP: https://www.reddit.com/r/Bitburner/comments/rovrsr/midgame_hacking_script_looking_for_suggestions/
+
+import { findHRTServer } from "findBestServer.js"
 /** A constant value to add/subtract to sleep() calls to ensure correct synchronization */
-const sleepConstant = 200;
+const sleepConstant = 500;
 /** The percentage of money to steal from the target at every cycle */
 const moneyToStealPercentage = 0.5;
 /** Buffer of security level */
@@ -12,12 +16,10 @@ const growSecurityEffect = 0.004;
 /** How much the security level of a server gets increased by an hack() call */
 const hackSecurityEffect = 0.002;
 
-/** Script to execute an hack() call after a specified cooldown */
-const hackScript = { "filename": "h1.js", "ram": 1.7, "ratio": 0.2 };
-/** Script to execute a grow() call after a specified cooldown */
-const growScript = { "filename": "g1.js", "ram": 1.75, "ratio": 0.4 };
-/** Script to execute a weaken() call after a specified cooldown */
-const weakenScript = { "filename": "w1.js", "ram": 1.75, "ratio": 0.7 };
+/** Script to execute an hack/grow/weaken call after a specified cooldown */
+const hackScript = { "filename": "h1.js", "ram": 1.7 };
+const growScript = { "filename": "g1.js", "ram": 1.75, "ratio": 0.55 };
+const weakenScript = { "filename": "w1.js", "ram": 1.75, "ratio": 0.8 };
 
 /**
  * Gets the amount of free ram for the server.
@@ -64,127 +66,6 @@ function getThreads(ns, server, script, ramPercentage) {
 	return freeRam >= scriptRam ? Math.floor(freeRam / scriptRam) : 0;
 }
 
-
-
-/**
-* Returns an array of all searchable servers
-*/
-async function findAllServers(ns) {
-	var q = [];
-	var serverDiscovered = [];
-
-	q.push("home");
-	serverDiscovered["home"] = true;
-
-	while (q.length) {
-		let v = q.shift();
-
-		let edges = ns.scan(v);
-
-		for (let i = 0; i < edges.length; i++) {
-			if (!serverDiscovered[edges[i]]) {
-				serverDiscovered[edges[i]] = true;
-				q.push(edges[i]);
-			}
-		}
-	}
-	return Object.keys(serverDiscovered);
-}
-
-/**
-* Finds list of all hackable and all rootable servers. Also finds optimal server to hack.
-* A hackable server is one which you can hack, grow, and weaken.
-* A rootable server is one which you can nuke.
-* Returns a 2d array with list of hackable, rootable, and the optimal server to hack
-*/
-async function findHackable(ns, allServers) {
-	var hackableServers = [];
-	var rootableServers = [];
-	var numPortsPossible = 0;
-
-	if (ns.fileExists("BruteSSH.exe", "home")) {
-		numPortsPossible += 1;
-	}
-	if (ns.fileExists("FTPCrack.exe", "home")) {
-		numPortsPossible += 1;
-	}
-	if (ns.fileExists("RelaySMTP.exe", "home")) {
-		numPortsPossible += 1;
-	}
-	if (ns.fileExists("HTTPWorm.exe", "home")) {
-		numPortsPossible += 1;
-	}
-	if (ns.fileExists("SQLInject.exe", "home")) {
-		numPortsPossible += 1;
-	}
-
-
-	for (let i = 0; i < allServers.length; i++) {
-		//if your hacking level is high enough and you can open enough ports, add it to hackable servers list
-		if (ns.getHackingLevel() >= ns.getServerRequiredHackingLevel(allServers[i]) && numPortsPossible >= ns.getServerNumPortsRequired(allServers[i])) {
-			hackableServers.push(allServers[i]);
-		}
-		//if it isn't home(this makes sure that you don't kill this script) and you either 
-		//already have root access(this is useful for servers bought by the player as you have access to those even if the security is higher than you can nuke)
-		//  or you can open enough ports
-		if (allServers[i] != "home" && (ns.hasRootAccess(allServers[i]) || (numPortsPossible >= ns.getServerNumPortsRequired(allServers[i])))) {
-			rootableServers.push(allServers[i]);
-			//if you don't have root access, open ports and nuke it
-			if (!ns.hasRootAccess(allServers[i])) {
-				if (ns.fileExists("BruteSSH.exe")) {
-					ns.brutessh(allServers[i]);
-				}
-				if (ns.fileExists("FTPCrack.exe")) {
-					ns.ftpcrack(allServers[i]);
-				}
-				if (ns.fileExists("RelaySMTP.exe")) {
-					ns.relaysmtp(allServers[i]);
-				}
-				if (ns.fileExists("HTTPWorm.exe")) {
-					ns.httpworm(allServers[i]);
-				}
-				if (ns.fileExists("SQLInject.exe")) {
-					ns.sqlinject(allServers[i]);
-				}
-				ns.nuke(allServers[i]);
-			}
-		}
-	}
-
-	//finds optimal server to hack
-	let optimalServer = await findOptimal(ns, hackableServers);
-
-	return [hackableServers, rootableServers, optimalServer];
-}
-
-/** 
- * Finds the best server to hack.
- * The algorithm works by assigning a value to each server and returning the max value server.
- * The value is the serverMaxMoney divided by the sum of the server's weaken time, grow time, and hack time.
- * You can easily change this function to choose a server based on whatever optimizing algorithm you want,
- *  just return the server name to hack.
-*/
-async function findOptimal(ns, hackableServers) {
-	let optimalServer = "n00dles";
-	let optimalVal = 0;
-	let currVal;
-	let currTime;
-
-	for (let i = 0; i < hackableServers.length; i++) {
-		currVal = ns.getServerMaxMoney(hackableServers[i]);
-		currTime = ns.getWeakenTime(hackableServers[i]) + ns.getGrowTime(hackableServers[i]) + ns.getHackTime(hackableServers[i]);
-		currVal /= currTime;
-		if (currVal >= optimalVal) {
-			optimalVal = currVal;
-			optimalServer = hackableServers[i];
-		}
-	}
-
-	return optimalServer;
-}
-
-
-
 /**
  * Formats an amount of money using the game standard format
  * 
@@ -200,12 +81,11 @@ function formatMoney(ns, amount) {
 export async function main(ns) {
 	ns.disableLog("ALL");
 	ns.enableLog("run");
-	var target = "n00dles";
+	var target = "";
 	// Check if it is present at least the required argument (target)
 	if (ns.args.length < 1) {
-		var allServers = await findAllServers(ns);  // finds all servers and clones grow hack and weaken files
-		var multiarray = await findHackable(ns, allServers);    // finds and nukes optimal, hackable, and rootale servers.
-		target = multiarray[2];
+		const multiArray = await findHRTServer(ns)
+		target = multiArray[2];
 	}
 	else {
 		target = ns.args[0];
