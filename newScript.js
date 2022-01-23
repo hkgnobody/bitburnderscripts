@@ -3,11 +3,11 @@
 
 import { findHRTServer } from "findBestServer.js"
 /** A constant value to add/subtract to sleep() calls to ensure correct synchronization */
-const sleepConstant = 500;
+const sleepConstant = 1000;
 /** The percentage of money to steal from the target at every cycle */
 const moneyToStealPercentage = 0.5;
 /** Buffer of security level */
-const securityBufferLvl = 7;
+const securityBufferLvl = 3;
 
 /** How much the security level of a server gets decreased by a weaken() call */
 const weakenSecurityEffect = 0.05;
@@ -63,7 +63,7 @@ function getMinWeakenThreads(hackThreads, growThreads) {
 function getThreads(ns, server, script, ramPercentage) {
 	const freeRam = getFreeRam(ns, server) * ramPercentage;
 	const scriptRam = script.ram;
-	return freeRam >= scriptRam ? Math.floor(freeRam / scriptRam) : 0;
+	return freeRam >= scriptRam ? Math.floor(freeRam / scriptRam) - 1 : 1;
 }
 
 /**
@@ -95,29 +95,22 @@ export async function main(ns) {
 	ns.tprint("Our target is " + target)
 
 	// If target's maximum amount of money and minimum security level are not provided, get them
-	let maxMoney;
-	let minSecurityLvl;
-	if (ns.args.length < 3) {
-		maxMoney = ns.getServerMaxMoney(target);
-		minSecurityLvl = ns.getServerMinSecurityLevel(target);
-	} else {
-		maxMoney = ns.args[1];
-		minSecurityLvl = ns.args[2];
-	}
+	let maxMoney = ns.getServerMaxMoney(target);;
+	let minSecurityLvl = ns.getServerMinSecurityLevel(target);;
 
 	// Get the current server hostname
-	const currentServer = ns.getHostname();
+	let homeServer = "home";
 
 	/* Make sure there are no running instances of hack, grow or weaken
 		scripts, this is necessary because every time the game is launched it restarts
 		all running scripts */
-	ns.scriptKill(hackScript.filename, currentServer);
-	ns.scriptKill(growScript.filename, currentServer);
-	ns.scriptKill(weakenScript.filename, currentServer);
+	ns.scriptKill(hackScript.filename, homeServer);
+	ns.scriptKill(growScript.filename, homeServer);
+	ns.scriptKill(weakenScript.filename, homeServer);
 
 	/* Execute weaken() calls with maximum amount of threads available to reduce
 		security level of target to minimum */
-	let threads = getThreads(ns, currentServer, weakenScript, weakenScript.ratio);
+	let threads = getThreads(ns, homeServer, weakenScript, weakenScript.ratio);
 	let securityLvl = ns.getServerSecurityLevel(target);
 
 	if (threads <= 0) {
@@ -126,7 +119,6 @@ export async function main(ns) {
 
 	while (securityLvl > minSecurityLvl + securityBufferLvl) {
 		ns.print("Initial weaken of target: " + securityLvl + " / " + (minSecurityLvl + securityBufferLvl));
-
 		const weakenTime = ns.getWeakenTime(target);
 		ns.run(weakenScript.filename, threads, target, 0);
 		// Wait for the script to terminate before the next loop
@@ -136,11 +128,11 @@ export async function main(ns) {
 	ns.print("Finished initial weaken");
 
 	// Wait to ensure all weaken threads are done
-	await ns.asleep(500);
+	await ns.asleep(sleepConstant);
 
 	/* Execute grow() and weaken() calls with all available threads to increase amount
 		of money in target to maximum, without increasing security level */
-	threads = getThreads(ns, currentServer, growScript, growScript.ratio);
+	threads = getThreads(ns, homeServer, growScript, growScript.ratio);
 	let weakenThreads = 0;
 	// The increase in security level that is given by every run of grow script with the max number of threads
 	let securityIncrease = threads * growSecurityEffect;
@@ -201,7 +193,7 @@ export async function main(ns) {
 
 		// Calculate the ram required to execute one cycle with max threads
 		let ramRequired = getRequiredRam(maxHackThreads, maxGrowThreads, maxWeakenThreadsBeforeGrow + maxWeakenThreadsAfterGrow);
-		let ramFree = getFreeRam(ns, currentServer);
+		let ramFree = getFreeRam(ns, homeServer);
 
 		ns.print("Ram required for max threads: " + ramRequired + " ; free: " + ramFree);
 
