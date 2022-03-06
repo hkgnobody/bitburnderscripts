@@ -46,7 +46,7 @@ async function solverGenerateIPs(ns, arrayData) {
 				let isValid = 1;
 				for (l = 0; l < 4; l++) {
 					let tempOctet = candidateAddress.split(".")[l];
-					if (tempOctet.slice(0, 1) === "0") { isValid = 0; }
+					if (tempOctet.slice(0, 1) === "0" && tempOctet.length!=1) { isValid = 0; }
 					if (parseInt(tempOctet) > 255) { isValid = 0; }
 				}
 				if (isValid) {
