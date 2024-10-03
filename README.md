@@ -9,3 +9,5 @@ Get all files.
 ``` run buyServer.js [ramLvl] ``` This run on home to buy servers with ram=Math.pow(2,args[0]). ramLvl is number between [1,20]. Show a small reference guild if no args received.
 
 ``` run contractSolver.js ``` This run on home to check any contract files (.cct) on all servers and attempt to solve them.
+
+``` Demo ```
